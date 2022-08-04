@@ -41,9 +41,9 @@ def get_parser():
                         choices=['cifar10','cifar100'])
     parser.add_argument('--model', default='ResNet34', type=str, help='model',
                         choices=['VGG16', 'ResNet34', 'DenseNet121'])
-    parser.add_argument('--optim', default='SGDEM', type=str, help='optimizer',
+    parser.add_argument('--optim', default='SGDM', type=str, help='optimizer',
                         choices=['SGDM','Adam','AdaBound','AdaBelief','RAdam','Yogi',
-                        'AEGD', 'SGDEM'])
+                        'AEGD', 'SGEM'])
     parser.add_argument('--lr', default=0.2, type=float, help='learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum term')
     parser.add_argument('--milestones', type=int, default=[150],
@@ -53,7 +53,7 @@ def get_parser():
     parser.add_argument('--bs', type=int, default=128, help='batch_size')
     parser.add_argument('--num_epochs', type=int, default=200,
                         help='number of epochs to train')
-    parser.add_argument('--c', default=1, type=float, help='SGDEM constant')
+    parser.add_argument('--c', default=1, type=float, help='SGEM constant')
     parser.add_argument('--pf', default=100, type=float, help='print frequency')
     parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
     parser.add_argument('--weight_decay', default=5e-4, type=float,
@@ -108,7 +108,7 @@ def get_ckpt_name(dataset='cifar10', model='ResNet34', optimizer='SGDM',
         'RAdam': 'lr{}'.format(lr),
         'Yogi': 'lr{}'.format(lr),
         'AEGD': 'lr{}'.format(lr),
-        'SGDEM': 'lr{}'.format(lr)
+        'SGEM': 'lr{}'.format(lr)
         }[optimizer]
     return '{}-{}-{}-{}'.format(dataset, model, optimizer, name)
 
@@ -162,8 +162,8 @@ def create_optimizer(args, model_params):
     elif args.optim == 'Yogi':
         return Yogi(model_params, args.lr,
                           weight_decay=args.weight_decay)
-    elif args.optim == 'SGDEM':
-        return SGDEM(model_params, args.lr, momentum=args.momentum,
+    elif args.optim == 'SGEM':
+        return SGEM(model_params, args.lr, momentum=args.momentum,
                     weight_decay=args.weight_decay)
     else:
         assert args.optim == 'AEGD'
@@ -183,7 +183,7 @@ def train(args, net, epoch, device, data_loader, optimizer, criterion):
         inputs, targets = inputs.to(device), targets.to(device)
 
         outputs = net(inputs)
-        if args.optim in {'AEGD', 'SGDEM'}:
+        if args.optim in {'AEGD', 'SGEM'}:
             def closure():
                 optimizer.zero_grad()
                 loss = criterion(outputs, targets)
